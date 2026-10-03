@@ -44,7 +44,7 @@ public class Snake {
     public void removeTail(){
         if(this.size <= 1) return;
         
-        this.visualTail.next = this.visualTail;
+        this.visualTail.next = this.visualTail.next;
         this.size--;
     }
     
@@ -52,6 +52,14 @@ public class Snake {
         growHead(endX, endY);
         
         if(!caughtFood)removeTail();
+    }
+    
+    public int  getHeadX(){
+        return this.visualHead.x;
+    }
+    
+    public int getHeadY(){
+        return this.visualHead.y;
     }
     
     public void drawSnake(EngineFrame e, int blockSize, int dxDirection, int dyDirection, Image imgHead, Image imgBody, Image imgTail, Image imgCurve){
@@ -89,6 +97,9 @@ public class Snake {
                     imgCurve.draw(e, drawX, drawY, pivotCenter, pivotCenter, angleCurve);
                 }
             }
+            
+            previous = current;
+            current = next;
             
         }
     }

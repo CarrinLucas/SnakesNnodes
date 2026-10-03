@@ -16,13 +16,21 @@ import br.com.davidbuzatto.jsge.image.ImageUtils;
  */
 public class Main extends EngineFrame {
     
-    private Image logo;
+    private Image logo;   
     
+    private Image head;
+    private Image body;
+    private Image tail;
+    private Image curve;
     
-    private Image head = ImageUtils.loadImage("resources/images/sprites/snakeHead.png");
-    private Image body = ImageUtils.loadImage("resources/images/sprites/snakeBody.png");
-    private Image tail = ImageUtils.loadImage("resources/images/sprites/snakeBody.png");
-    private Image curve = ImageUtils.loadImage("resources/images/sprites/snakeCurve.png");
+    private Snake snake;
+    private int posicaoX = 12; //era pra colocar a imagem no meio (não funcionou)
+    private int posicaoY = 7;
+    private int dxDirection = 1;
+    private int dyDirection = 0;
+    private double timer = 0;
+    private double TempoMovimento = 0.2;
+    
     
     public Main() {
         
@@ -50,9 +58,17 @@ public class Main extends EngineFrame {
      */
     @Override
     public void create() {
-        logo = head;
+        
+        head = ImageUtils.loadImage("resources/images/sprites/snakeHead.png");
+        body = ImageUtils.loadImage("resources/images/sprites/snakeBody.png");
+        tail = ImageUtils.loadImage("resources/images/sprites/snakeTail.png");
+        curve = ImageUtils.loadImage("resources/images/sprites/snakeCurve.png");
+        
+        logo = ImageUtils.loadImage("resources/images/sprites/snakeHead.png");
         logo.resize( (int) ( logo.getWidth() * 0.1 ), (int) ( logo.getWidth() * 0.1 ) );
         setWindowIcon( logo );
+        
+        snake = new Snake(posicaoX, posicaoY);
     }
 
     /**
@@ -69,6 +85,39 @@ public class Main extends EngineFrame {
      */
     @Override
     public void update( double delta ) {
+        
+        if(isKeyPressed(KEY_UP) && dyDirection != 1){
+            dxDirection = 0;
+            dyDirection = -1;
+        }
+        else if(isKeyPressed(KEY_DOWN) && dyDirection != -1){
+            dxDirection = 0;
+            dyDirection = 1;
+        }
+        else if(isKeyPressed(KEY_RIGHT) && dxDirection != -1){
+            dxDirection = 1;
+            dyDirection = 0;
+        }
+        else if(isKeyPressed(KEY_LEFT) && dxDirection != 1){
+            dxDirection = -1;
+            dyDirection = 0;
+        }
+        
+        timer += delta;
+        
+       if ( timer >= TempoMovimento ) {
+             
+        int cabecaAtualX = snake.getHeadX();
+        int cabecaAtualY = snake.getHeadY();
+        
+        int novoX = cabecaAtualX + dxDirection;
+        int novoY = cabecaAtualY + dyDirection;
+        
+        snake.moveSnake(novoX, novoY, false);
+       
+        timer = 0;
+    }
+       
     }
     
     /**
@@ -83,26 +132,8 @@ public class Main extends EngineFrame {
         
         clearBackground( WHITE );
 
-        String text = "Basic game template";
-        Rectangle r = measureTextBounds( text, 40 );
-        
-        double x = getScreenWidth() / 2 - r.width / 2;
-        double y = getScreenHeight() / 2 - r.height / 2;
-        fillRectangle( x - 10, y, r.width + 20, r.height, BLACK );
-        drawText( text, x, y + 10, 40, WHITE );
-        
-        drawImage( 
-            logo, 
-            getScreenWidth() - logo.getWidth() - 20, 
-            getScreenHeight() - logo.getHeight() - 30
-        );
-        drawText( 
-            CoreUtils.getVersion(),
-            getScreenWidth() - measureText( CoreUtils.getVersion() ) - 20,
-            getScreenHeight() - 25,
-            BLACK
-        );
-        
+        snake.drawSnake(this, 32, dxDirection, dyDirection, head, body, tail, curve);
+               
         drawFPS( 20, 20 );
     
     }
