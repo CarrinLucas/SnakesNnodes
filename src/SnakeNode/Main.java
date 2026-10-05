@@ -6,6 +6,7 @@ import br.com.davidbuzatto.jsge.core.utils.DrawingUtils;
 import br.com.davidbuzatto.jsge.geom.Rectangle;
 import br.com.davidbuzatto.jsge.image.Image;
 import br.com.davidbuzatto.jsge.image.ImageUtils;
+import java.awt.Color;
 
 /**
  * Modelo de projeto básico da JSGE.
@@ -24,13 +25,17 @@ public class Main extends EngineFrame {
     private Image curve;
     
     private Snake snake;
-    private int posicaoX = 12; //era pra colocar a imagem no meio (não funcionou)
-    private int posicaoY = 7;
-    private int dxDirection = 1;
-    private int dyDirection = 0;
-    private double timer = 0;
-    private double TempoMovimento = 0.2;
+    private int positionX;
+    private int positionY;
+    private int dxDirection;
+    private int dyDirection;
     
+    private Level level;
+    
+    private GameState currentState;
+    private GameLevel currentLevel;
+    
+    public static final int BLOCK_SIZE = 32;
     
     public Main() {
         
@@ -64,11 +69,26 @@ public class Main extends EngineFrame {
         tail = ImageUtils.loadImage("resources/images/sprites/snakeTail.png");
         curve = ImageUtils.loadImage("resources/images/sprites/snakeCurve.png");
         
+        head.resize(BLOCK_SIZE, BLOCK_SIZE);
+        body.resize(BLOCK_SIZE, BLOCK_SIZE);
+        tail.resize(BLOCK_SIZE, BLOCK_SIZE);
+        curve.resize(BLOCK_SIZE, BLOCK_SIZE);
+        
         logo = ImageUtils.loadImage("resources/images/sprites/snakeHead.png");
         logo.resize( (int) ( logo.getWidth() * 0.1 ), (int) ( logo.getWidth() * 0.1 ) );
         setWindowIcon( logo );
         
-        snake = new Snake(posicaoX, posicaoY);
+        currentState = GameState.RUNNING;
+        currentLevel = GameLevel.LEVEL_1;
+        
+        level = new Level();
+        
+        positionX = 3;
+        positionY = 11;
+        dxDirection = 1;
+        dyDirection = 0;
+        snake = new Snake(positionX, positionY);
+        System.out.println("TESTE: A cobra nasceu em X=" + positionX + " e Y=" + positionY);
     }
 
     /**
@@ -86,38 +106,20 @@ public class Main extends EngineFrame {
     @Override
     public void update( double delta ) {
         
-        if(isKeyPressed(KEY_UP) && dyDirection != 1){
-            dxDirection = 0;
-            dyDirection = -1;
+        if(currentState == GameState.RUNNING){
+            updateSnakeMovement();
+        }else if (currentState == GameState.GAME_OVER){
+            if(isKeyPressed(KEY_R)){
+                currentState = GameState.RUNNING;
+            }
         }
-        else if(isKeyPressed(KEY_DOWN) && dyDirection != -1){
-            dxDirection = 0;
-            dyDirection = 1;
+        if(isKeyDown(KEY_C)){
+           snake.updateSnake(delta, dxDirection, dyDirection, true);
+        }else{
+           snake.updateSnake(delta, dxDirection, dyDirection, false); 
         }
-        else if(isKeyPressed(KEY_RIGHT) && dxDirection != -1){
-            dxDirection = 1;
-            dyDirection = 0;
-        }
-        else if(isKeyPressed(KEY_LEFT) && dxDirection != 1){
-            dxDirection = -1;
-            dyDirection = 0;
-        }
+        currentState = level.updateLevel(delta, snake, currentLevel);
         
-        timer += delta;
-        
-       if ( timer >= TempoMovimento ) {
-             
-        int cabecaAtualX = snake.getHeadX();
-        int cabecaAtualY = snake.getHeadY();
-        
-        int novoX = cabecaAtualX + dxDirection;
-        int novoY = cabecaAtualY + dyDirection;
-        
-        snake.moveSnake(novoX, novoY, false);
-       
-        timer = 0;
-    }
-       
     }
     
     /**
@@ -129,13 +131,50 @@ public class Main extends EngineFrame {
      */
     @Override
     public void draw() {
-        
         clearBackground( WHITE );
 
-        snake.drawSnake(this, 32, dxDirection, dyDirection, head, body, tail, curve);
-               
-        drawFPS( 20, 20 );
+        if (currentState == GameState.RUNNING) {
+            drawGameElements();
+        }else if (currentState == GameState.GAME_OVER) {
+            drawGameElements();
+            
+            fillRectangle(0, 0, 800, 450, new Color(0, 0, 0, 150));
+            drawText("GAME OVER", 310, 200, 40, RED);
+        }else if (currentState == GameState.VICTORY) {
+            drawGameElements();
+            
+            fillRectangle(0, 0, 800, 450, new Color(0, 0, 0, 150));
+            drawText("VICTORY!", 330, 200, 40, BLUE);
+        }
+    }
     
+    private void updateSnakeMovement(){
+        if(isKeyPressed(KEY_UP) || isKeyPressed(KEY_W) ){
+            if(dyDirection != 1){
+                dxDirection = 0;
+                dyDirection = -1;   
+            }
+        }else if(isKeyPressed(KEY_DOWN) || isKeyPressed(KEY_S)){
+            if(dyDirection != -1){
+                dxDirection = 0;
+                dyDirection = 1;
+            }
+        }else if(isKeyPressed(KEY_RIGHT) || isKeyPressed(KEY_D) ){
+            if(dxDirection != -1){
+                dxDirection = 1;
+                dyDirection = 0;
+            }
+        }else if(isKeyPressed(KEY_LEFT) || isKeyPressed(KEY_A)){
+            if(dxDirection != 1){
+                dxDirection = -1;
+                dyDirection = 0;
+            }
+        }
+    }
+    
+    private void drawGameElements(){
+        level.drawLevel(this, currentLevel);
+        snake.drawSnake(this, dxDirection, dyDirection, head, body, tail, curve);
     }
     
     /**

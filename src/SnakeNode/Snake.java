@@ -8,19 +8,22 @@ import br.com.davidbuzatto.jsge.image.Image;
  * @author lucas
  */
 public class Snake {
-    
     public class Node {
     
-    public int x;
-    public int y;
-    public Node  next;
-    
-    public Node (int x, int y){
-        this.x = x;
-        this.y = y;
-        this.next = null;
+        public int x;
+        public int y;
+        public Node  next;
+
+        public Node (int x, int y){
+            this.x = x;
+            this.y = y;
+            this.next = null;
+        }
     }
-}
+    
+    private double timer = 0;
+    private double moveTime = 0.2;
+    private boolean isAlive = true;
     
     private Node visualTail;
     private Node visualHead;
@@ -44,7 +47,7 @@ public class Snake {
     public void removeTail(){
         if(this.size <= 1) return;
         
-        this.visualTail.next = this.visualTail.next;
+        this.visualTail = this.visualTail.next;
         this.size--;
     }
     
@@ -62,17 +65,21 @@ public class Snake {
         return this.visualHead.y;
     }
     
-    public void drawSnake(EngineFrame e, int blockSize, int dxDirection, int dyDirection, Image imgHead, Image imgBody, Image imgTail, Image imgCurve){
+    public boolean getState(){
+        return this.isAlive;
+    }
+    
+    public void drawSnake(EngineFrame e, int dxDirection, int dyDirection, Image imgHead, Image imgBody, Image imgTail, Image imgCurve){
         Node previous = null;
         Node current = this.visualTail;
         
-        double pivotCenter = blockSize / 2.0;
+        double pivotCenter = Main.BLOCK_SIZE / 2.0;
         
         while(current != null){
             Node next = current.next;
             
-            double drawX = current.x * blockSize;
-            double drawY = current.y * blockSize;
+            double drawX = current.x * Main.BLOCK_SIZE;
+            double drawY = current.y * Main.BLOCK_SIZE;
             
             if(previous == null && next != null){
                 int nextDx = next.x - current.x;
@@ -99,16 +106,16 @@ public class Snake {
             }
             
             previous = current;
-            current = next;
+            current = current.next;
             
         }
     }
     
     private double calculateAngle(int dx, int dy){
-        if (dx == 1) return 0;
-        if (dy == 1) return 90;
-        if (dx == -1) return 180;
-        if (dy == -1) return 270; 
+        if (dx == 1) return 90;
+        if (dy == 1) return 180;
+        if (dx == -1) return 270;
+        if (dy == -1) return 0; 
         return 0;
     }
     
@@ -123,6 +130,39 @@ public class Snake {
             return 270;
         }
         return 0;
+    }
+    
+    private boolean checkSelfCollision(int targetX, int targetY){
+        
+        Node current = this.visualTail;
+        
+        while(current !=null){
+            if(current.x == targetX && current.y == targetY){
+                return true;
+            } 
+            current = current.next;
+        }
+        
+        return false;
+    }
+    
+    public void updateSnake(double delta, int dxDirection, int dyDirection, boolean caughtFood){
+        if(!isAlive) return;
+        
+        this.timer += delta;
+        
+        if(this.timer >= this.moveTime){
+            int newX = this.visualHead.x + dxDirection;
+            int newY = this.visualHead.y + dyDirection;
+            
+            if(checkSelfCollision(newX, newY)){
+                this.isAlive = false;
+                return;
+            }
+            
+            moveSnake(newX, newY, caughtFood);
+            this.timer = 0;
+        }
     }
     
 }
