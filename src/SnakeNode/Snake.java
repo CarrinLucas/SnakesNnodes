@@ -21,6 +21,7 @@ public class Snake {
         }
     }
     
+    private int CrescimentoCobra = 0;
     private double timer = 0;
     private double moveTime = 0.2;
     private boolean isAlive = true;
@@ -51,10 +52,16 @@ public class Snake {
         this.size--;
     }
     
+    public void CrescimentoCobra(){
+        this.CrescimentoCobra++;
+    }
+    
     public void moveSnake(int endX, int endY, boolean caughtFood){
         growHead(endX, endY);
         
-        if(!caughtFood)removeTail();
+        if(this.CrescimentoCobra > 0){
+            this.CrescimentoCobra--;
+        }else if(!caughtFood)removeTail();
     }
     
     public int  getHeadX(){

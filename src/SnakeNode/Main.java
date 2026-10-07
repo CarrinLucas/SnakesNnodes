@@ -108,18 +108,31 @@ public class Main extends EngineFrame {
         
         if(currentState == GameState.RUNNING){
             updateSnakeMovement();
+            
+          if(isKeyDown(KEY_C)){
+           snake.updateSnake(delta, dxDirection, dyDirection, true);
+           }else{
+           snake.updateSnake(delta, dxDirection, dyDirection, false); 
+           }
+           currentState = level.updateLevel(delta, snake, currentLevel);
+            
         }else if (currentState == GameState.GAME_OVER){
             if(isKeyPressed(KEY_R)){
+                snake = new Snake(3, 11);
+                
+                level = new Level();
+                
                 currentState = GameState.RUNNING;
             }
+        }else if (currentState == GameState.VICTORY){
+            if(isKeyPressed(KEY_ENTER)){
+                currentLevel = GameLevel.LEVEL_2;
+                snake = new Snake(3, 11);
+                currentState = GameState.RUNNING;
+                
+            }
         }
-        if(isKeyDown(KEY_C)){
-           snake.updateSnake(delta, dxDirection, dyDirection, true);
-        }else{
-           snake.updateSnake(delta, dxDirection, dyDirection, false); 
-        }
-        currentState = level.updateLevel(delta, snake, currentLevel);
-        
+
     }
     
     /**
@@ -133,7 +146,7 @@ public class Main extends EngineFrame {
     public void draw() {
         clearBackground( WHITE );
 
-        if (currentState == GameState.RUNNING) {
+        if (currentState == GameState.RUNNING){
             drawGameElements();
         }else if (currentState == GameState.GAME_OVER) {
             drawGameElements();
