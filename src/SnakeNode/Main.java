@@ -16,6 +16,10 @@ import java.awt.Color;
  * @author Prof. Dr. David Buzatto
  */
 public class Main extends EngineFrame {
+   
+    /**
+     * Insanciando os objetos globais e sprites a serem usados
+     */
     
     private Image logo;   
     
@@ -23,6 +27,11 @@ public class Main extends EngineFrame {
     private Image body;
     private Image tail;
     private Image curve;
+    
+    private Image imgMenu;
+    private Image imgVic1;
+    private Image imgVic2;
+    private Image imgGO;
     
     private Snake snake;
     private int positionX;
@@ -69,6 +78,11 @@ public class Main extends EngineFrame {
         tail = ImageUtils.loadImage("resources/images/sprites/snakeTail.png");
         curve = ImageUtils.loadImage("resources/images/sprites/snakeCurve.png");
         
+        imgMenu = ImageUtils.loadImage("resources/images/screens/inicialScreen.png");
+        imgVic1 = ImageUtils.loadImage("resources/images/screens/victoryScreenLvl1.png");
+        imgVic2 = ImageUtils.loadImage("resources/images/screens/victoryScreenLvl2.png");
+        imgGO = ImageUtils.loadImage("resources/images/screens/gameOverScreen.png");
+        
         head.resize(BLOCK_SIZE, BLOCK_SIZE);
         body.resize(BLOCK_SIZE, BLOCK_SIZE);
         tail.resize(BLOCK_SIZE, BLOCK_SIZE);
@@ -78,7 +92,7 @@ public class Main extends EngineFrame {
         logo.resize( (int) ( logo.getWidth() * 0.1 ), (int) ( logo.getWidth() * 0.1 ) );
         setWindowIcon( logo );
         
-        currentState = GameState.RUNNING;
+        currentState = GameState.MENU;
         currentLevel = GameLevel.LEVEL_1;
         
         level = new Level();
@@ -88,7 +102,6 @@ public class Main extends EngineFrame {
         dxDirection = 1;
         dyDirection = 0;
         snake = new Snake(positionX, positionY);
-        System.out.println("TESTE: A cobra nasceu em X=" + positionX + " e Y=" + positionY);
     }
 
     /**
@@ -106,33 +119,38 @@ public class Main extends EngineFrame {
     @Override
     public void update( double delta ) {
         
-        if(currentState == GameState.RUNNING){
-            updateSnakeMovement();
-            
-          if(isKeyDown(KEY_C)){
-           snake.updateSnake(delta, dxDirection, dyDirection, true);
-           }else{
-           snake.updateSnake(delta, dxDirection, dyDirection, false); 
-           }
-           currentState = level.updateLevel(delta, snake, currentLevel);
-            
-        }else if (currentState == GameState.GAME_OVER){
+        if(currentState == GameState.MENU){     //controle dos estados do jogo, MENU, RUNNING, VICTORY e GAME_OVER
             if(isKeyPressed(KEY_R)){
-                snake = new Snake(3, 11);
-                
-                level = new Level();
-                
                 currentState = GameState.RUNNING;
             }
-        }else if (currentState == GameState.VICTORY){
-            if(isKeyPressed(KEY_ENTER)){
-                currentLevel = GameLevel.LEVEL_2;
+        }else if (currentState == GameState.RUNNING) {
+            
+            boolean wantsToMove = updateSnakeMovement();
+            snake.updateSnake(delta, dxDirection, dyDirection, false, wantsToMove);
+            currentState = level.updateLevel(delta, snake, currentLevel);
+            
+        } else if (currentState == GameState.VICTORY ) {        
+            if (isKeyPressed(KEY_ENTER)) {              
+                if (currentLevel == GameLevel.LEVEL_1) {
+                    currentLevel = GameLevel.LEVEL_2;
+                    currentState = GameState.RUNNING;
+                    
+                    level = new Level(); 
+                    snake = new Snake(3, 11);
+                    
+                } else if (currentLevel == GameLevel.LEVEL_2) {
+                    System.exit(0); 
+                }
+            }
+            
+        } else if (currentState == GameState.GAME_OVER) {    //após um game over, o jogo reinicia ao apertar R
+            if (isKeyPressed(KEY_R)) {
+                currentState = GameState.RUNNING;        
+                level = new Level(); 
                 snake = new Snake(3, 11);
-                currentState = GameState.RUNNING;
-                
             }
         }
-
+        
     }
     
     /**
@@ -145,48 +163,55 @@ public class Main extends EngineFrame {
     @Override
     public void draw() {
         clearBackground( WHITE );
-
-        if (currentState == GameState.RUNNING){
+        
+        if(currentState == GameState.MENU){ //desenha a tela baseado no estado do jogo
+            imgMenu.draw(this, 0, 0);
+        }else if (currentState == GameState.RUNNING){
             drawGameElements();
         }else if (currentState == GameState.GAME_OVER) {
             drawGameElements();
-            
-            fillRectangle(0, 0, 800, 450, new Color(0, 0, 0, 150));
-            drawText("GAME OVER", 310, 200, 40, RED);
+            imgGO.draw(this, 0, 0);
         }else if (currentState == GameState.VICTORY) {
             drawGameElements();
             
-            fillRectangle(0, 0, 800, 450, new Color(0, 0, 0, 150));
-            drawText("VICTORY!", 330, 200, 40, BLUE);
-        }
-    }
-    
-    private void updateSnakeMovement(){
-        if(isKeyPressed(KEY_UP) || isKeyPressed(KEY_W) ){
-            if(dyDirection != 1){
-                dxDirection = 0;
-                dyDirection = -1;   
-            }
-        }else if(isKeyPressed(KEY_DOWN) || isKeyPressed(KEY_S)){
-            if(dyDirection != -1){
-                dxDirection = 0;
-                dyDirection = 1;
-            }
-        }else if(isKeyPressed(KEY_RIGHT) || isKeyPressed(KEY_D) ){
-            if(dxDirection != -1){
-                dxDirection = 1;
-                dyDirection = 0;
-            }
-        }else if(isKeyPressed(KEY_LEFT) || isKeyPressed(KEY_A)){
-            if(dxDirection != 1){
-                dxDirection = -1;
-                dyDirection = 0;
+            if(currentLevel == GameLevel.LEVEL_1){
+                imgVic1.draw(this, 0, 0);
+            }else{
+                imgVic2.draw(this, 0, 0);
             }
         }
     }
     
-    private void drawGameElements(){
+    private boolean updateSnakeMovement(){          //controla os movimentos da cobra
+        boolean moved = false;
+        
+        if((isKeyDown(KEY_UP) || isKeyDown(KEY_W)) && dyDirection != 1){
+            dxDirection = 0;
+            dyDirection = -1;
+            moved = true;
+        }
+        else if((isKeyDown(KEY_DOWN) || isKeyDown(KEY_S)) && dyDirection != -1){
+            dxDirection = 0;
+            dyDirection = 1;
+            moved = true;
+        }
+        else if((isKeyDown(KEY_RIGHT) || isKeyDown(KEY_D)) && dxDirection != -1){
+            dxDirection = 1;
+            dyDirection = 0;
+            moved = true;
+        }
+        else if((isKeyDown(KEY_LEFT) || isKeyDown(KEY_A)) && dxDirection != 1){
+            dxDirection = -1;
+            dyDirection = 0;
+            moved = true;
+        }
+        
+        return moved;
+    }
+    
+    private void drawGameElements(){        //desenha o nível e a cobra
         level.drawLevel(this, currentLevel);
+        snake.drawDeadSnake(this, body, tail, curve);
         snake.drawSnake(this, dxDirection, dyDirection, head, body, tail, curve);
     }
     
